@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <!--xmlns:app="http://schemas.android.com/apk/res-auto"-->
+        <!--xmlns:tools="http://schemas.android.com/tools"-->
+        <!--tools:context="com.example.android.equalizertest2.MainActivity">-->
+        <ProgressBar
+            android:id="@+id/loading_indicator"
+            style="@style/Widget.AppCompat.ProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/static_mode_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Static pattern control"
+            android:textColor="#000000"
+            android:textSize="28sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/loading_indicator" />
+
+        <Button
+            android:id="@+id/button_static_pattern"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="pattern"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@+id/button_random"
+            app:layout_constraintTop_toBottomOf="@+id/static_mode_title" />
+
+        <Button
+            android:id="@+id/button_random"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="random"
+            app:layout_constraintLeft_toRightOf="@+id/button_static_pattern"
+            app:layout_constraintRight_toLeftOf="@+id/button_snake1"
+            app:layout_constraintTop_toTopOf="@+id/button_static_pattern" />
+
+        <Button
+            android:id="@+id/button_snake1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="snake1"
+            app:layout_constraintLeft_toRightOf="@+id/button_random"
+            app:layout_constraintRight_toLeftOf="@+id/button_snake2"
+            app:layout_constraintTop_toTopOf="@+id/button_static_pattern" />
+
+        <Button
+            android:id="@+id/button_snake2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="snake2"
+            app:layout_constraintLeft_toRightOf="@+id/button_snake1"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/button_static_pattern" />
+
+        <TextView
+            android:id="@+id/sound_mode_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sound mode control"
+            android:textColor="#000000"
+            android:textSize="28sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/button_static_pattern" />
+
+        <Button
+            android:id="@+id/button_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="stop"
+            app:layout_constraintRight_toLeftOf="@+id/button_sound1"
+            app:layout_constraintTop_toBottomOf="@+id/sound_mode_title" />
+
+        <Button
+            android:id="@+id/button_sound2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="sound2"
+            app:layout_constraintLeft_toRightOf="@+id/button_sound1"
+            app:layout_constraintTop_toTopOf="@+id/button_stop" />
+
+        <Button
+            android:id="@+id/button_sound1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="sound1"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/button_stop" />
+
+        <TextView
+            android:id="@+id/testDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sound level:"
+            android:textColor="#000000"
+            app:layout_constraintTop_toBottomOf="@+id/button_stop"
+            tools:layout_editor_absoluteX="0dp" />
+
+        <TextView
+            android:id="@+id/testTextview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="#000000"
+            app:layout_constraintLeft_toRightOf="@+id/testDescription"
+            app:layout_constraintTop_toBottomOf="@+id/button_stop" />
+
+        <LinearLayout
+            android:id="@+id/level4_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/testTextview">
+
+            <View
+                android:id="@+id/level_4"
+                android:layout_width="100dp"
+                android:layout_height="40dp"
+                android:layout_margin="3dp"
+                android:background="#868686" />
+
+            <TextView
+                android:id="@+id/textview_level4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="32000" />
+
+            <SeekBar
+                android:id="@+id/slide_bar_level4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:layout_constraintLeft_toRightOf="@+id/level_4"
+                app:layout_constraintTop_toTopOf="@+id/level_4"
+                tools:layout_editor_absoluteY="0dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/level3_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/level4_layout">
+
+            <View
+                android:id="@+id/level_3"
+                android:layout_width="100dp"
+                android:layout_height="40dp"
+                android:layout_margin="3dp"
+                android:background="#868686" />
+
+            <TextView
+                android:id="@+id/textview_level3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="32000" />
+
+            <SeekBar
+                android:id="@+id/slide_bar_level3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:layout_constraintLeft_toRightOf="@+id/level_3"
+                app:layout_constraintTop_toTopOf="@+id/level_3"
+                tools:layout_editor_absoluteY="0dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/level2_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/level3_layout">
+
+            <View
+                android:id="@+id/level_2"
+                android:layout_width="100dp"
+                android:layout_height="40dp"
+                android:layout_margin="3dp"
+                android:background="#868686" />
+
+            <TextView
+                android:id="@+id/textview_level2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="32000" />
+
+            <SeekBar
+                android:id="@+id/slide_bar_level2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:layout_constraintLeft_toRightOf="@+id/level_2"
+                app:layout_constraintTop_toTopOf="@+id/level_2"
+                tools:layout_editor_absoluteY="0dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/level1_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/level2_layout">
+
+            <View
+                android:id="@+id/level_1"
+                android:layout_width="100dp"
+                android:layout_height="40dp"
+                android:layout_margin="3dp"
+                android:background="#868686" />
+
+            <TextView
+                android:id="@+id/textview_level1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="32000" />
+
+            <SeekBar
+                android:id="@+id/slide_bar_level1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:layout_constraintLeft_toRightOf="@+id/level_1"
+                app:layout_constraintTop_toTopOf="@+id/level_1"
+                tools:layout_editor_absoluteY="0dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/linearLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@+id/level1_layout"
+            tools:layout_editor_absoluteX="0dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DIM LEVEL"
+                android:textColor="#000000" />
+
+            <Spinner
+                android:id="@+id/dim_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"></Spinner>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/text_pattern_creator_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pattern creator"
+            android:textColor="#000000"
+            android:textSize="28sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
+
+        <LinearLayout
+            android:id="@+id/layout_pattern_creator"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/text_pattern_creator_title">
+
+            <Button
+                android:id="@+id/button_play_pattern"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PLAY"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toLeftOf="@+id/text_currently_selected_pattern"
+                app:layout_constraintTop_toBottomOf="@+id/text_pattern_creator_title" />
+
+            <TextView
+                android:id="@+id/text_currently_selected_pattern"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="No pattern selected"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                app:layout_constraintRight_toLeftOf="@+id/button_select_pattern"
+                app:layout_constraintTop_toBottomOf="@+id/text_pattern_creator_title" />
+
+            <Button
+                android:id="@+id/button_select_pattern"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select"
+                app:layout_constraintLeft_toRightOf="@+id/text_currently_selected_pattern"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/text_pattern_creator_title" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/button_open_pattern_creator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Open pattern creator"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/layout_pattern_creator" />
+    </android.support.constraint.ConstraintLayout>
+</ScrollView>

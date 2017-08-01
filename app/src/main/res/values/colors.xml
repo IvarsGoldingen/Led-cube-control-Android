@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="silent">#868686</color>
+    <color name="loud">#7e0000</color>
+    <color name="off_led">#ffffff</color>
+    <color name="on_led">#2d34fd</color>
+    <color name="scene_background_color">#10c8e1</color>\
+    <color name="editing_scene_textview_color">#22ff00</color>
+</resources>
