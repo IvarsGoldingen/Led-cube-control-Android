@@ -87,7 +87,6 @@ public class BlueToothConnect extends AppCompatActivity {
 
     private void connectToBtDevice(BluetoothDevice device) {
         String TAG = "error";
-        //TODO different thread
         BluetoothSocket bluetoothSocket = null;
         try {
             // Get a BluetoothSocket to connect with the given BluetoothDevice.
@@ -139,7 +138,6 @@ public class BlueToothConnect extends AppCompatActivity {
 
     private void listenForIncommingConnection() {
         //this could be used for a different project but is not needed now
-        //TODO do this on a different thread
         //When you want to connect two devices, one must act as a server by holding an open BluetoothServerSocket
         BluetoothServerSocket serverSocket = null;
         try {

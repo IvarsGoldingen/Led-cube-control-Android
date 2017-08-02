@@ -693,57 +693,15 @@ public class PatternCreator extends AppCompatActivity {
             builder.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    openFile(arrayAdapter.getItem(which));
+                    //clear current pattern
+                    mLedSceneAdapter.clear();
+                    new openPatternTask().execute(arrayAdapter.getItem(which));
                 }
             });
             builder.show();
 
         } else {
             Toast.makeText(PatternCreator.this, "No pattern files saved", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void openFile(String fileName) {
-        File patternDirectory = getDir("Patterns", Context.MODE_PRIVATE);
-        try {
-            //save the opened file name so it can be saved with the same name
-            fileNameTemp = fileName;
-            //clear current pattern
-            mLedSceneAdapter.clear();
-            //this syntax because the file is in a folder
-            //TODO: asynctask or smthng?
-            FileInputStream fileInputStream = new FileInputStream(new File(patternDirectory + "/" + fileName));
-            //InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "utf8");
-            //BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-            //int readArrayLenght;
-            currentSceneNumber = 1;
-            totalNumberOfScenes = 0;
-            byte[] tempArray = new byte[12];
-            int ofset = 0;
-            int numberOfReadBytes = 0;
-            while (true) {
-                numberOfReadBytes = bufferedInputStream.read(tempArray, ofset, 12);
-                if (numberOfReadBytes == 12) {
-                    mLedSceneAdapter.add(new LedScene(tempArray, currentSceneNumber));
-                    currentSceneNumber++;
-                    totalNumberOfScenes++;
-                } else if (numberOfReadBytes == -1) {
-                    Toast.makeText(this, "File read correctly", Toast.LENGTH_SHORT).show();
-                    break;
-                } else {
-                    Toast.makeText(this, "File read error\nIncorrect number of bytes", Toast.LENGTH_SHORT).show();
-                    break;
-                }
-            }
-            bufferedInputStream.close();
-            fileInputStream.close();
-            updateLedToBeEditedText();
-            Toast.makeText(this, "File open success", Toast.LENGTH_SHORT).show();
-            fileInputStream.close();
-        } catch (IOException e) {
-            Toast.makeText(this, "File open failed", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
         }
     }
 
@@ -837,6 +795,63 @@ public class PatternCreator extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+        }
+    }
+
+    private class openPatternTask extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected void onPostExecute(Boolean result) {
+            if (result) {
+                mLedSceneAdapter.notifyDataSetChanged();
+                Toast.makeText(PatternCreator.this, "File read correctly", Toast.LENGTH_SHORT).show();
+                updateLedToBeEditedText();
+            } else {
+                Toast.makeText(PatternCreator.this, "File read error", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        @Override
+        protected Boolean doInBackground(String... strings) {
+            File patternDirectory = getDir("Patterns", Context.MODE_PRIVATE);
+            //this will be changed to true if succesfull file read
+            boolean result = false;
+            try {
+                //save the opened file name so it can be saved with the same name
+                fileNameTemp = strings[0];
+
+                //this syntax because the file is in a folder
+                FileInputStream fileInputStream = new FileInputStream(new File(patternDirectory + "/" + fileNameTemp));
+                //InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "utf8");
+                //BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                //int readArrayLenght;
+                currentSceneNumber = 1;
+                totalNumberOfScenes = 0;
+                byte[] tempArray = new byte[12];
+                int ofset = 0;
+                int numberOfReadBytes = 0;
+                while (true) {
+                    numberOfReadBytes = bufferedInputStream.read(tempArray, ofset, 12);
+                    if (numberOfReadBytes == 12) {
+                        mLedSceneArrayList.add(new LedScene(tempArray, currentSceneNumber));
+                        currentSceneNumber++;
+                        totalNumberOfScenes++;
+                    } else if (numberOfReadBytes == -1) {
+                        result = true;
+                        break;
+                    } else {
+                        Log.e("File open error", "incorrect number of bytes");
+                        break;
+                    }
+                }
+                bufferedInputStream.close();
+                fileInputStream.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+            return result;
         }
     }
 

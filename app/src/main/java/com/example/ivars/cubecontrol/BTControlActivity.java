@@ -181,7 +181,6 @@ public class BTControlActivity extends AppCompatActivity {
         File patternDirectory = getDir("Patterns", Context.MODE_PRIVATE);
         String patternToPlay = String.valueOf(currentlySelectedPatternText.getText());
         selectedArrayList.clear();
-        //TODO: asynctask or smthng? BufferedReader
         try {
             FileInputStream fileInputStream = new FileInputStream(new File(patternDirectory + "/" + patternToPlay));
             BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
