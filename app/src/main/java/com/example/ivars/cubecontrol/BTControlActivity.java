@@ -25,12 +25,12 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,30 +44,46 @@ import butterknife.OnClick;
 
 import static java.lang.String.valueOf;
 
-/**
- * Created by Ivars on 2017.06.04..
- */
-
 public class BTControlActivity extends AppCompatActivity {
 
+    public static final int DIM_SPPED_FOR_VISUALIZER_MODE = 31;
+    //how often is sound level sent to the microcontroller
+    public static final int SEND_LOUDNESS_PERIOD_TIME = 25;
+    //Mode IDs that are recognised by the microcontroller
+    private static final int STATIC_PATTERN_ID = 11;
+    private static final int RANDOM_ID = 12;
+    private static final int SNAKE_1_ID = 15;
+    private static final int SNAKE_2_ID = 16;
+    private static final int SOUND_1_ID = 13;
+    private static final int SOUND_2_ID = 14;
+    private static final int SCENE_MODE_ID = 17;
+    //Sound levels for visualizer
+    private static final int LOUDNESS_1 = 1;
+    private static final int LOUDNESS_2 = 2;
+    private static final int LOUDNESS_3 = 3;
+    private static final int LOUDNESS_4 = 4;
     // Constants that indicate the current connection state
-    public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
-    static final int YOUR_REQUEST_CODE = 200; // could be something else..
-    static final int MAX_SLIDER_VALUE = 100; //
-    static final int SLIDER_RATIO = 32768 / MAX_SLIDER_VALUE; // because 32768 is max value form mic
-    static final int DEFAULT_SOUND_LEVEL1 = 5; // because 32768 is max value form mic
-    static final int DEFAULT_SOUND_LEVEL2 = 10; // because 32768 is max value form mic
-    static final int DEFAULT_SOUND_LEVEL3 = 20; // because 32768 is max value form mic
-    static final int DEFAULT_SOUND_LEVEL4 = 40; // because 32768 is max value form mic
+    private static final int STATE_NONE = 0;       // we're doing nothing
+    private static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
+    private static final int STATE_CONNECTED = 3;  // now connected to a remote device
+
+    //Message types for the handler that communicates between BTService and this activity
     private static final int STATE_MESSAGE = 1;
     private static final int READ_MESSAGE = 2;
     private static final int WRITE_MESSAGE = 3;
     private static final int ERROR_MESSAGE = 4;
-    boolean spinnerInSetup = true;
-    @BindView(R.id.testTextview)
-    TextView testTextView;
+
+    //Code for audio recording permission
+    private static final int RECORD_AUDIO_REQUEST_CODE = 200; // could be something else..
+
+    //Values for slider, used for Visualizer modes
+    private static final int MAX_SLIDER_VALUE = 100; //
+    private static final int SLIDER_RATIO = 32768 / MAX_SLIDER_VALUE; // because 32768 is max value form mic
+    private static final int DEFAULT_SOUND_LEVEL1 = 5; // because 32768 is max value form mic
+    private static final int DEFAULT_SOUND_LEVEL2 = 10; // because 32768 is max value form mic
+    private static final int DEFAULT_SOUND_LEVEL3 = 20; // because 32768 is max value form mic
+    private static final int DEFAULT_SOUND_LEVEL4 = 40; // because 32768 is max value form mic
+    //Butterknife binds
     @BindView(R.id.text_currently_selected_pattern)
     TextView currentlySelectedPatternText;
     @BindView(R.id.level_1)
@@ -98,55 +114,19 @@ public class BTControlActivity extends AppCompatActivity {
     Spinner dimSpinner;
     @BindView(R.id.loading_indicator)
     ProgressBar progressBar;
-    private final Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            //handker msg has three argumenst what arg1 and arg2. what = type of message
-            switch (msg.what) {
-                case STATE_MESSAGE:
-                    switch (msg.arg1) {
-                        case STATE_NONE:
-                            Toast.makeText(BTControlActivity.this, "State none", Toast.LENGTH_SHORT).show();
-                            break;
-                        case STATE_CONNECTED:
-                            //Toast.makeText(BTControlActivity.this, "State connected", Toast.LENGTH_SHORT).show();
-                            progressBar.setVisibility(View.GONE);
-                            break;
-                        case STATE_CONNECTING:
-                            Toast.makeText(BTControlActivity.this, "Connecting", Toast.LENGTH_SHORT).show();
-                            break;
-                    }
-                    break;
-                case ERROR_MESSAGE:
-                    Toast.makeText(BTControlActivity.this, msg.getData().getString("Connecting failed"),
-                            Toast.LENGTH_SHORT).show();
-                    finish();
-                    break;
-                case READ_MESSAGE:
-                    int numberOfReceivedBytes = msg.arg1;
-                    byte[] readBuf = (byte[]) msg.obj;
-                    if (numberOfReceivedBytes > 0) {
-                        String receivedData = new String(readBuf, 0, msg.arg1);
-                        if (!receivedData.isEmpty()) {
-                            Log.e("Read message", receivedData);
-                        }
-                    }
-                    break;
-                default:
-                    //Toast.makeText(BTControlActivity.this, "unknown message in handler", Toast.LENGTH_SHORT).show();
-                    break;
-            }
-        }
-    };
     @BindView(R.id.button_play_pattern)
     Button playStopPatternButton;
-    ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
-    BluetoothAdapter mBluetoothAdapter;
+    @BindView(R.id.state_title_textview)
+    TextView stateTitleTextView;
+    //Other
+    private boolean spinnerInSetup = true;
+    //scheduledExecutorService allows to send messages periodically. Used for patterns
+    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
+    private BluetoothAdapter mBluetoothAdapter;
     private int soundLevel1 = SLIDER_RATIO * DEFAULT_SOUND_LEVEL1;
     private int soundLevel2 = SLIDER_RATIO * DEFAULT_SOUND_LEVEL2;
     private int soundLevel3 = SLIDER_RATIO * DEFAULT_SOUND_LEVEL3;
     private int soundLevel4 = SLIDER_RATIO * DEFAULT_SOUND_LEVEL4;
-    private Handler mVisualizerHandler;
     private SoundMeter mSoundmeter = null;
     private Timer mTimer = null;
     private TimerTask mTimerTask = null;
@@ -156,15 +136,41 @@ public class BTControlActivity extends AppCompatActivity {
     private int patternToSend = 0;
     private boolean sendNewScenes = false;
     private BTService mBTService = null;
+    private Handler mHandler = null;
+    private String targetBTDeviceName;
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.control_layout);
+        getSupportActionBar().hide();
+        mHandler = new MessageHandler(this);
+        ButterKnife.bind(this);
+        askPermissions();
+        connectToDevice();
+        setUpSlideBars();
+        setUpSpinner();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (mBTService != null) {
+            mBTService.stop();
+        }
+        stopVisualizer();
+    }
 
     @OnClick(R.id.button_play_pattern)
     public void playStopButtonPressed() {
         String currentButtonFunction = String.valueOf(playStopPatternButton.getText());
         if (currentButtonFunction.equals("PLAY")) {
-            stopEQ();
+            stopVisualizer();
             sendNewScenes = true;
             playStopPatternButton.setText("STOP");
-            scheduledExecutorService = Executors.newScheduledThreadPool(0);
+            //Initialize the scheduledExecutorService to schedule sending messages
+            scheduledExecutorService = Executors.newScheduledThreadPool(5);
             playPattern();
         } else {
             stopPatternSending();
@@ -178,6 +184,7 @@ public class BTControlActivity extends AppCompatActivity {
     }
 
     public void playPattern() {
+        //read the pattern from file
         File patternDirectory = getDir("Patterns", Context.MODE_PRIVATE);
         String patternToPlay = String.valueOf(currentlySelectedPatternText.getText());
         selectedArrayList.clear();
@@ -189,6 +196,7 @@ public class BTControlActivity extends AppCompatActivity {
             byte[] tempArray = new byte[12];
             int ofset = 0;
             int numberOfReadBytes = 0;
+            //read the full scene
             while (true) {
                 //read 12 bytes from the file
                 numberOfReadBytes = bufferedInputStream.read(tempArray, ofset, 12);
@@ -202,13 +210,13 @@ public class BTControlActivity extends AppCompatActivity {
                     break;
                 } else {
                     //if less than 12 bytes are read the file is corrupt
-                    Toast.makeText(this, "File read error\nIncorrect number of bytes", Toast.LENGTH_SHORT).show();
+                    SingleToast.show(this, "File read error\nIncorrect number of bytes");
                     playStopPatternButton.setText("PLAY");
                     break;
                 }
             }
         } catch (IOException e) {
-            Toast.makeText(this, "Failed to play pattern", Toast.LENGTH_SHORT).show();
+            SingleToast.show(this, "Failed to play pattern");
             playStopPatternButton.setText("PLAY");
             Log.e("Error", String.valueOf(e));
             e.printStackTrace();
@@ -218,20 +226,21 @@ public class BTControlActivity extends AppCompatActivity {
 
     private void startPatternSending(int sceneTime) {
         //this is preferable to timer when multiple worker threads are needed
-
         scheduledExecutorService.schedule(new Runnable() {
             @Override
             public void run() {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        //Toast.makeText(BTControlActivity.this, "Scene Number: " + patternToSend, Toast.LENGTH_SHORT).show();
+                        //send pattern data after the st time limit
                         sendMessage(selectedArrayList.get(patternToSend).getLevels());
                         patternToSend++;
                         if (patternToSend >= selectedArrayListSize) {
+                            //if at the end of pattern start from begining
                             patternToSend = 0;
                         }
                         if (sendNewScenes) {
+                            //if pattern creator still active send the next scene
                             startPatternSending(selectedArrayList.get(patternToSend).getSceneTimeInMillis());
                         }
                     }
@@ -242,7 +251,7 @@ public class BTControlActivity extends AppCompatActivity {
 
     @OnClick(R.id.button_open_pattern_creator)
     public void openPatternCreator() {
-        stopEQ();
+        stopVisualizer();
         Intent patternCreatorIntent = new Intent(BTControlActivity.this, PatternCreator.class);
         startActivity(patternCreatorIntent);
     }
@@ -254,45 +263,45 @@ public class BTControlActivity extends AppCompatActivity {
 
     @OnClick(R.id.button_static_pattern)
     public void staticPattern() {
-        stopEQ();
+        stopVisualizer();
         stopPatternSending();
-        sendByteMessage((byte) 11);
+        sendSingleByteMessage((byte) STATIC_PATTERN_ID);
     }
 
     @OnClick(R.id.button_random)
     public void random() {
-        stopEQ();
+        stopVisualizer();
         stopPatternSending();
-        sendByteMessage((byte) 12);
+        sendSingleByteMessage((byte) RANDOM_ID);
     }
 
     @OnClick(R.id.button_snake1)
     public void snake1() {
-        stopEQ();
+        stopVisualizer();
         stopPatternSending();
-        sendByteMessage((byte) 15);
+        sendSingleByteMessage((byte) SNAKE_1_ID);
     }
 
     @OnClick(R.id.button_sound1)
     public void sound1() {
-        startEQ();
-        sendByteMessage((byte) 13);
+        startVisualizer();
+        sendSingleByteMessage((byte) SOUND_1_ID);
     }
 
     @OnClick(R.id.button_sound2)
     public void sound2() {
-        startEQ();
-        sendByteMessage((byte) 14);
+        startVisualizer();
+        sendSingleByteMessage((byte) SOUND_2_ID);
     }
 
     @OnClick(R.id.button_snake2)
     public void snake2() {
-        stopEQ();
+        stopVisualizer();
         stopPatternSending();
-        sendByteMessage((byte) 16);
+        sendSingleByteMessage((byte) SNAKE_2_ID);
     }
 
-    public void startEQ() {
+    public void startVisualizer() {
         //init timer
         stopPatternSending();
         if (mSoundmeter == null) {
@@ -300,7 +309,7 @@ public class BTControlActivity extends AppCompatActivity {
             mTimer = new Timer();
             initTimerTask();
             mSoundmeter.strart();
-            mTimer.schedule(mTimerTask, 0, 25);
+            mTimer.schedule(mTimerTask, 0, SEND_LOUDNESS_PERIOD_TIME);
         }
     }
 
@@ -310,7 +319,7 @@ public class BTControlActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.button_stop)
-    public void stopEQ() {
+    public void stopVisualizer() {
         if (mTimerTask != null) {
             mTimerTask.cancel();
         }
@@ -323,32 +332,6 @@ public class BTControlActivity extends AppCompatActivity {
         mTimer = null;
         mTimerTask = null;
         mSoundmeter = null;
-
-        //Toast.makeText(this, "EQ stopped", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.visualizer_layout);
-
-        ButterKnife.bind(this);
-        askPermissions();
-
-        connectToDevice();
-        setUpSlideBars();
-
-        setUpSpinner();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        if (mBTService != null) {
-            mBTService.stop();
-        }
-        stopEQ();
     }
 
     private void setUpSpinner() {
@@ -360,13 +343,12 @@ public class BTControlActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (!spinnerInSetup) {
-                    sendByteMessage((byte) (31 + position));
+                    //Microcontroller will use this value for setting the dim speed
+                    sendSingleByteMessage((byte) (DIM_SPPED_FOR_VISUALIZER_MODE + position));
                 } else {
                     spinnerInSetup = false;
                 }
-
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
 
@@ -375,7 +357,7 @@ public class BTControlActivity extends AppCompatActivity {
     }
 
     private void levelsInOrderToast() {
-        Toast.makeText(this, "Levels must be in order", Toast.LENGTH_SHORT).show();
+        SingleToast.show(this, "Levels must be in order");
     }
 
     private void setUpSlideBars() {
@@ -496,39 +478,33 @@ public class BTControlActivity extends AppCompatActivity {
     }
 
     private void connectToDevice() {
-
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
         String btDeviceAddress = (String) getIntent().getSerializableExtra("deviceAddress");
         BluetoothDevice mDevice = mBluetoothAdapter.getRemoteDevice(btDeviceAddress);
-
-        mBTService = new BTService(this, mHandler);
+        targetBTDeviceName = mDevice.getName();
+        mBTService = new BTService(mHandler);
         mBTService.connect(mDevice);
     }
 
-    private void sendByteMessage(byte message) {
+    private void sendSingleByteMessage(byte message) {
         if (mBTService.getState() != BTService.STATE_CONNECTED) {
-            Toast.makeText(this, "No one to send to", Toast.LENGTH_SHORT).show();
-            Toast.makeText(this, String.valueOf(message), Toast.LENGTH_SHORT).show();
+            Log.e("Send byte message: ", "Not connected to a device");
             return;
         }
-
         byte[] send = {message};
-
         mBTService.write(send);
-
     }
 
     private void sendMessage(byte[] message) {
         if (mBTService.getState() != BTService.STATE_CONNECTED) {
-            Toast.makeText(this, "No one to send to", Toast.LENGTH_SHORT).show();
+            Log.e("Send byte message: ", "Not connected to a device");
             return;
         }
-
+        //if the message is correct length
         if (message.length == 8) {
             //8 bytes of scenes + 1 command ID byte
             byte[] temp = new byte[9];
-            temp[0] = 17;
+            temp[0] = SCENE_MODE_ID;
             for (int x = 0; x < 8; x++) {
                 temp[x + 1] = message[x];
             }
@@ -540,35 +516,35 @@ public class BTControlActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) //check if permission request is necessary
         {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.RECORD_AUDIO,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, YOUR_REQUEST_CODE);
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, RECORD_AUDIO_REQUEST_CODE);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(final int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            if (requestCode == YOUR_REQUEST_CODE) {
-                Log.i("tets", "Permission granted");
-                //do what you wanted to do
+            if (requestCode == RECORD_AUDIO_REQUEST_CODE) {
+                Log.i("test", "Permission granted");
             }
         } else {
-            Log.d("tets", "Permission failed");
+            Log.e("test", "Permission failed");
         }
     }
 
+    //init showing sound loudnes in UI and sending to microcontroller
     private void initTimerTask() {
         //A task that can be scheduled for one-time or repeated execution by a Timer.
         mTimerTask = new TimerTask() {
             @Override
             public void run() {
+                //get loudness from soundmeter
                 amplitude = mSoundmeter.getAmplitude();
                 //the below code will be executed on the thread where the handler is attached
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        testTextView.setText(valueOf(amplitude));
+                        //send the loudness to the microcontroller and update UI
                         updateBars(amplitude);
-                        //32768
                     }
                 });
             }
@@ -576,32 +552,32 @@ public class BTControlActivity extends AppCompatActivity {
     }
 
     public void updateBars(int loudness) {
+        //set UI for app and also send the info to the microcontroller depending on the loudness
         if (loudness < soundLevel1) {
-
             viewLevel1.setBackgroundColor(getResources().getColor(R.color.silent));
             viewLevel2.setBackgroundColor(getResources().getColor(R.color.silent));
             viewLevel3.setBackgroundColor(getResources().getColor(R.color.silent));
             viewLevel4.setBackgroundColor(getResources().getColor(R.color.silent));
         } else if (loudness < soundLevel2) {
-            sendByteMessage((byte) 1);
+            sendSingleByteMessage((byte) LOUDNESS_1);
             viewLevel1.setBackgroundColor(getResources().getColor(R.color.loud));
             viewLevel2.setBackgroundColor(getResources().getColor(R.color.silent));
             viewLevel3.setBackgroundColor(getResources().getColor(R.color.silent));
             viewLevel4.setBackgroundColor(getResources().getColor(R.color.silent));
         } else if (loudness < soundLevel3) {
-            sendByteMessage((byte) 2);
+            sendSingleByteMessage((byte) LOUDNESS_2);
             viewLevel1.setBackgroundColor(getResources().getColor(R.color.loud));
             viewLevel2.setBackgroundColor(getResources().getColor(R.color.loud));
             viewLevel3.setBackgroundColor(getResources().getColor(R.color.silent));
             viewLevel4.setBackgroundColor(getResources().getColor(R.color.silent));
         } else if (loudness < soundLevel4) {
-            sendByteMessage((byte) 3);
+            sendSingleByteMessage((byte) LOUDNESS_3);
             viewLevel1.setBackgroundColor(getResources().getColor(R.color.loud));
             viewLevel2.setBackgroundColor(getResources().getColor(R.color.loud));
             viewLevel3.setBackgroundColor(getResources().getColor(R.color.loud));
             viewLevel4.setBackgroundColor(getResources().getColor(R.color.silent));
         } else {
-            sendByteMessage((byte) 4);
+            sendSingleByteMessage((byte) LOUDNESS_4);
             viewLevel1.setBackgroundColor(getResources().getColor(R.color.loud));
             viewLevel2.setBackgroundColor(getResources().getColor(R.color.loud));
             viewLevel3.setBackgroundColor(getResources().getColor(R.color.loud));
@@ -640,7 +616,7 @@ public class BTControlActivity extends AppCompatActivity {
             builder.show();
 
         } else {
-            Toast.makeText(BTControlActivity.this, "No pattern files saved", Toast.LENGTH_SHORT).show();
+            SingleToast.show(this, "No pattern files saved");
         }
     }
 
@@ -648,5 +624,64 @@ public class BTControlActivity extends AppCompatActivity {
         currentlySelectedPatternText.setText(fileName);
     }
 
+    //handler for getting messages from the BTService
+    private static class MessageHandler extends Handler {
+        private final WeakReference<BTControlActivity> mWeakReference;
 
+        public MessageHandler(BTControlActivity activity) {
+            mWeakReference = new WeakReference<BTControlActivity>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            //handler msg has three argumenst what arg1 and arg2. what = type of message
+            switch (msg.what) {
+                case STATE_MESSAGE:
+                    switch (msg.arg1) {
+                        case STATE_NONE:
+                            SingleToast.show(mWeakReference.get(), "Disconnected");
+                            mWeakReference.get().stateTitleTextView.setText("Disconnected");
+                            break;
+                        case STATE_CONNECTED:
+                            mWeakReference.get().progressBar.setVisibility(View.GONE);
+                            SingleToast.show(mWeakReference.get(), "Successfully connected");
+                            mWeakReference.get().stateTitleTextView.setText("Connected to " + mWeakReference.get().targetBTDeviceName);
+                            break;
+                        case STATE_CONNECTING:
+                            SingleToast.show(mWeakReference.get(), "Connecting");
+                            mWeakReference.get().stateTitleTextView.setText("Connecting to " + mWeakReference.get().targetBTDeviceName);
+                            break;
+                    }
+                    break;
+                case ERROR_MESSAGE:
+                    SingleToast.show(mWeakReference.get(), msg.getData().getString("Connecting failed"));
+                    //go back to the connect activity
+                    mWeakReference.get().finish();
+                    break;
+                case READ_MESSAGE:
+                    int numberOfReceivedBytes = msg.arg1;
+                    byte[] readBuf = (byte[]) msg.obj;
+                    if (numberOfReceivedBytes > 0) {
+                        String receivedData = new String(readBuf, 0, msg.arg1);
+                        if (!receivedData.isEmpty()) {
+                            Log.i("Read message", receivedData);
+                        }
+                    }
+                    break;
+                case WRITE_MESSAGE:
+                    int numberOfReceivedWriteBytes = msg.arg1;
+                    byte[] writeBuf = (byte[]) msg.obj;
+                    if (numberOfReceivedWriteBytes > 0) {
+                        String receivedData = new String(writeBuf, 0, msg.arg1);
+                        if (!receivedData.isEmpty()) {
+                            Log.i("Write message", receivedData);
+                        }
+                    }
+                    break;
+                default:
+                    Log.e("BTControlactivity: ", "Unknown message ID in handler");
+                    break;
+            }
+        }
+    }
 }

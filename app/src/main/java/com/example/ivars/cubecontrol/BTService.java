@@ -1,9 +1,7 @@
 package com.example.ivars.cubecontrol;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -15,23 +13,19 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
-/**
- * Created by Ivars on 2017.06.03..
- */
 //this class contains all the methods for using bluetooth
 public class BTService {
-    // Constants that indicate the current connection state
-    public static final int STATE_NONE = 0;       // we're doing nothing
     public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
+    // Constants that indicate the current connection state
+    private static final int STATE_NONE = 0;       // we're doing nothing
     private static final String TAG = "BluetoothUtility";
     private static final UUID mUUID =
-            UUID.fromString("cb597ac8-ae6d-4c83-8554-d2918fdfdc0f");
+            UUID.fromString("cb597ac8-ae6d-4c83-8554-d2918fdfdc0f");//needed for BT operations
     private static final int STATE_MESSAGE = 1;
     private static final int READ_MESSAGE = 2;
     private static final int WRITE_MESSAGE = 3;
     private static final int ERROR_MESSAGE = 4;
-    private final BluetoothAdapter mBluetoothAdapter;
     private final Handler mHandler;
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
@@ -43,8 +37,7 @@ public class BTService {
      * @param context The UI Activity Context
      * @param handler A Handler to send messages back to the UI Activity
      */
-    public BTService(Context context, Handler handler) {
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    public BTService(Handler handler) {
         mHandler = handler;
     }
 
@@ -57,16 +50,13 @@ public class BTService {
     }
 
     public void connect(BluetoothDevice BTdevice) {
-
         // Cancel any thread attempting to make a connection
         if (mConnectThread != null) {
             mConnectThread.cancel();
             mConnectThread = null;
         }
-
         mConnectThread = new ConnectThread(BTdevice);
         mConnectThread.start();
-
         updateUIState();
     }
 
@@ -78,17 +68,17 @@ public class BTService {
      */
     public void write(byte[] out) {
         // Create temporary object
-        ConnectedThread r;
+        ConnectedThread thread;
         // Synchronize a copy of the ConnectedThread
         synchronized (this) {
             if (mState != STATE_CONNECTED) return;
-            r = mConnectedThread;
+            thread = mConnectedThread;
         }
         // Perform the write unsynchronized
-        r.write(out);
+        thread.write(out);
     }
 
-    public void connected(BluetoothSocket socket, BluetoothDevice device) {
+    private void connected(BluetoothSocket socket) {
         // Cancel the thread that completed the connection
         if (mConnectThread != null) {
             mConnectThread.cancel();
@@ -142,7 +132,7 @@ public class BTService {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
 
-        public ConnectedThread(BluetoothSocket socket) {
+        private ConnectedThread(BluetoothSocket socket) {
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
@@ -245,13 +235,7 @@ public class BTService {
                 } catch (IOException closeException) {
                     success = false;
                     Log.e("TAG", "Could not close the client socket", e);
-                } catch (NoSuchMethodException e1) {
-                    success = false;
-                    e1.printStackTrace();
-                } catch (IllegalAccessException e1) {
-                    success = false;
-                    e1.printStackTrace();
-                } catch (InvocationTargetException e1) {
+                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e1) {
                     success = false;
                     e1.printStackTrace();
                 }
@@ -259,14 +243,14 @@ public class BTService {
             if (success) {
                 mConnectThread = null;
                 //start the connected thread
-                connected(bluetoothSocket, mDevice);
+                connected(bluetoothSocket);
             } else {
                 connectionFailed();
             }
 
         }
 
-        public void cancel() {
+        private void cancel() {
             try {
                 bluetoothSocket.close();
             } catch (IOException e) {

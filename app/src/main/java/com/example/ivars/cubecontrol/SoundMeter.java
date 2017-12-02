@@ -7,6 +7,7 @@ import java.io.IOException;
 public class SoundMeter {
     private MediaRecorder mRecorder = null;
 
+    //start recording sound
     public void strart() {
         if (mRecorder == null) {
             mRecorder = new MediaRecorder();

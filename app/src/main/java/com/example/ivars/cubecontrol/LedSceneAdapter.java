@@ -36,9 +36,9 @@ public class LedSceneAdapter extends ArrayAdapter<LedScene> {
             //If the listview was not yet created we assign and initialize viewHolder to it
             //so findViewById will not be needed each time
             holder = new ViewHolder();
-            holder.numberTextview = (TextView) listItemView.findViewById(R.id.textview_scene_number);
-            holder.sceneTextview = (TextView) listItemView.findViewById(R.id.textview_scene);
-            holder.sceneLenghtTextview = (TextView) listItemView.findViewById(R.id.textview_scene_lenght);
+            holder.numberTextview = listItemView.findViewById(R.id.textview_scene_number);
+            holder.sceneTextview = listItemView.findViewById(R.id.textview_scene);
+            holder.sceneLenghtTextview = listItemView.findViewById(R.id.textview_scene_lenght);
             //tell the View to hold an arbitrary object
             listItemView.setTag(holder);
         } else {

@@ -25,11 +25,15 @@
             android:name=".BTControlActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="Control"
-            android:screenOrientation="portrait" />
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden" />
         <activity
             android:name=".PatternCreator"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="Pattern creator"
+            android:launchMode="singleTop"
+            android:parentActivityName=".BTControlActivity"
             android:screenOrientation="portrait" />
     </application>
 

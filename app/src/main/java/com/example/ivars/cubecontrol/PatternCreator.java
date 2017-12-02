@@ -357,7 +357,7 @@ public class PatternCreator extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.pattern_creator);
-
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         ButterKnife.bind(this);
 
         ListView sceneListView = (ListView) findViewById(R.id.scene_list);
